@@ -20,6 +20,7 @@
                     
                         <form method="POST" action="{{ route('profile.update') }}" enctype="multipart/form-data">
                             @csrf
+                            @method('patch')
                             <div class="border-bottom mb-3">
                                 <h4 class="h4"><i class="align-middle me-1" data-feather="user"></i>My Profile</h4>
                             </div>

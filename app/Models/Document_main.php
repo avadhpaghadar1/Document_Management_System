@@ -4,16 +4,29 @@ namespace App\Models;
 
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
+use Illuminate\Database\Eloquent\SoftDeletes;
 
 class Document_main extends Model
 {
     use HasFactory;
+    use SoftDeletes;
+
     public $timestamps = true;
     protected $fillable = [
         'document_type_id',
         'note',
         'expiry',
-        'user_id'
+        'user_id',
+        'approval_status',
+        'approved_by',
+        'approved_at',
+        'rejected_reason'
+    ];
+
+    protected $casts = [
+        'expiry' => 'date',
+        'approved_at' => 'datetime',
+        'deleted_at' => 'datetime',
     ];
     public function users()
     {
@@ -49,4 +62,19 @@ class Document_main extends Model
 {
     return $this->hasMany(Document_image::class,'document_id');
 }
+
+    public function versions()
+    {
+        return $this->hasMany(Document_version::class, 'document_id');
+    }
+
+    public function sharedLinks()
+    {
+        return $this->hasMany(Shared_link::class, 'document_id');
+    }
+
+        public function fileAnalyses()
+        {
+            return $this->hasMany(Document_file_analysis::class, 'document_id');
+        }
 }

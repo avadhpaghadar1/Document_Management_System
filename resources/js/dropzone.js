@@ -2,13 +2,21 @@ import $ from 'jquery';
 import Dropzone from 'dropzone';
 Dropzone.autoDiscover = false;
 
+const dropzoneRoot = document.querySelector('#myDropzone');
+if (!dropzoneRoot) {
+    // This script is bundled globally; only activate on pages that include #myDropzone
+    // (Add/Update Document)
+    // eslint-disable-next-line no-console
+    // console.debug('dropzone: #myDropzone not present, skipping');
+} else {
+
 const myDropzone = new Dropzone("#myDropzone", {
     url: '/add-document-image',
     method: 'post',
     autoProcessQueue: true,
     addRemoveLinks: true,
     paramName: 'file[]',
-    acceptedFiles: ".jpg,.jpeg,.png,.doc,.gif,.xls",
+    acceptedFiles: ".pdf,.jpg,.jpeg,.png,.doc,.gif,.xls",
     headers: {
         'X-CSRF-TOKEN': document.querySelector('meta[name="csrf-token"]').getAttribute('content')
     },
@@ -110,8 +118,12 @@ const myDropzone = new Dropzone("#myDropzone", {
         }).catch(error => console.error('Error:', error));
     }
 });
+
 document.addEventListener('DOMContentLoaded', function () {
-    const existingImages = JSON.parse(document.getElementById('existingImages').value);
+    const existingImagesEl = document.getElementById('existingImages');
+    if (!existingImagesEl) return;
+
+    const existingImages = JSON.parse(existingImagesEl.value || '[]');
     existingImages.forEach(image => {
         const mockFile = { name: image.name, fileName: image.name };
         myDropzone.displayExistingFile(mockFile, mockFile.dataURL);
@@ -128,4 +140,6 @@ document.addEventListener('DOMContentLoaded', function () {
 function getDocumentIdFromURL() {
     const urlParams = new URLSearchParams(window.location.search);
     return urlParams.get('id');
+}
+
 }
