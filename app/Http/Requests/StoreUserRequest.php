@@ -25,6 +25,7 @@ class StoreUserRequest extends FormRequest
         return [
             'name'=>'required|string|regex:/^[\pL\s\-]+$/u',
             'email'=>'required|email|unique:users,email',
+            'role' => 'nullable|in:admin,manager,viewer',
             'password'=>'required|string|min:8|confirmed',
             'country'=>'required|not_in:2',
             'mobile'=>'required|integer',

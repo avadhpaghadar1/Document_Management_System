@@ -1,13 +1,15 @@
 <?php
 
 use App\Http\Controllers\DashboardController;
-use App\Http\Controllers\DocumentAuditController;
-use App\Http\Controllers\DocumentController;
-use App\Http\Controllers\DocumentTypeController;
-use App\Http\Controllers\GroupController;
-use App\Http\Controllers\NotificationController;
+use App\Http\Controllers\Documents\DocumentAuditController;
+use App\Http\Controllers\Documents\DocumentController;
+use App\Http\Controllers\Documents\DocumentTypeController;
+use App\Http\Controllers\Admin\GroupController;
+use App\Http\Controllers\Settings\NotificationController;
 use App\Http\Controllers\ProfileController;
-use App\Http\Controllers\UserController;
+use App\Http\Controllers\Documents\SharedLinkController;
+use App\Http\Controllers\Uploads\UploadController;
+use App\Http\Controllers\Admin\UserController;
 use Illuminate\Support\Facades\Route;
 use Illuminate\Support\Facades\Storage;
 
@@ -17,7 +19,7 @@ Route::get('/', function () {
 
 Route::middleware('auth')->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
-    Route::post('/profile', [ProfileController::class, 'update'])->name('profile.update');
+    Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::post('/change-password', [ProfileController::class, 'changePassword'])->name('change-password');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
@@ -30,7 +32,7 @@ Route::middleware(['auth'])->group(function () {
     // Document Route
     Route::get('/document', [DocumentController::class, 'display'])->name('document');
     Route::get('/view-document/{id}', [DocumentController::class, 'view'])->name('view-document');
-    Route::get('/download/{filename}', [DocumentController::class, 'download'])->name('download');
+    Route::get('/download/{document}/{filename}', [DocumentController::class, 'download'])->name('download');
     Route::get('/export-document', [DocumentController::class, 'share'])->name('export-document');
     Route::get('/add-document', [DocumentController::class, 'create'])->name('add-document');
     Route::post('/add-document', [DocumentController::class, 'store'])->name('add-document');
@@ -39,6 +41,20 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/edit-document/{id}', [DocumentController::class, 'edit'])->name('edit-document');
     Route::post('update-document', [DocumentController::class, 'update'])->name('update-document');
     Route::delete('/delete-document', [DocumentController::class, 'delete'])->name('delete-document');
+
+    // Workflow
+    Route::post('/document/{id}/submit-approval', [DocumentController::class, 'submitForApproval'])->name('document.submit-approval');
+    Route::post('/document/{id}/approve', [DocumentController::class, 'approve'])->name('document.approve');
+    Route::post('/document/{id}/reject', [DocumentController::class, 'reject'])->name('document.reject');
+
+    // Versions
+    Route::get('/document/{id}/versions', [DocumentController::class, 'versions'])->name('document.versions');
+    Route::post('/document-version/{id}/restore', [DocumentController::class, 'restoreVersion'])->name('document-version.restore');
+
+    // Recycle bin
+    Route::get('/recycle-bin', [DocumentController::class, 'recycleBin'])->name('recycle-bin');
+    Route::post('/recycle-bin/{id}/restore', [DocumentController::class, 'restoreDeleted'])->name('recycle-bin.restore');
+    Route::delete('/recycle-bin/{id}/force-delete', [DocumentController::class, 'forceDelete'])->name('recycle-bin.force-delete');
 
     // Document Audit
     Route::get('/document-audit', [DocumentAuditController::class, 'display'])->name('document-audit');
@@ -73,7 +89,20 @@ Route::middleware(['auth'])->group(function () {
     // Notification Routes
     Route::get('/setting', [NotificationController::class, 'display'])->name('setting');
     Route::post('/setting', [NotificationController::class, 'store'])->name('setting');
+
+    // Uploads Routes
+    Route::get('/uploads', [UploadController::class, 'display'])->name('uploads');
+    Route::post('/uploads/upload', [UploadController::class, 'upload'])->name('uploads.upload');
+    Route::post('/uploads/delete', [UploadController::class, 'delete'])->name('uploads.delete');
+    Route::get('/uploads/download/{id}', [UploadController::class, 'download'])->name('uploads.download');
+
+    // Shared links
+    Route::post('/shared-links', [SharedLinkController::class, 'create'])->name('shared-links.create');
+    Route::post('/shared-links/{id}/revoke', [SharedLinkController::class, 'revoke'])->name('shared-links.revoke');
 });
+
+// Public download via share token
+Route::get('/s/{token}', [SharedLinkController::class, 'download'])->name('shared-links.download');
 
 Route::get('document-types/{id}', [DocumentTypeController::class, 'getFields'])->name('document-types');
 

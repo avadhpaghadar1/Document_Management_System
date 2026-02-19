@@ -14,6 +14,8 @@ import './setting';
 import './document';
 import './dropzone';
 
+import './uploads';
+
 
 
 

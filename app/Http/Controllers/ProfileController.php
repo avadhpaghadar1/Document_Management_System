@@ -9,6 +9,7 @@ use App\Models\User_profile;
 use Illuminate\Http\RedirectResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\Schema;
 use Illuminate\Support\Facades\Redirect;
 use Illuminate\View\View;
 
@@ -264,7 +265,16 @@ class ProfileController extends Controller
             ['code' => '+263', 'name' => 'Zimbabwe']
         ];
         $user = Auth::user();
-        $profile = User_profile::where('user_id', $user->id)->get();
+
+        $profile = collect();
+        try {
+            if (Schema::hasTable('user_profiles')) {
+                $profile = User_profile::where('user_id', $user->id)->get();
+            }
+        } catch (\Throwable) {
+            $profile = collect();
+        }
+
         return view('profile/edit-profile', [
             'user' => $user,
             'countryCodes' => $countryCodes,
@@ -277,33 +287,37 @@ class ProfileController extends Controller
      */
     public function update(ProfileUpdateRequest $request)
     {
-        // $request->user()->fill($request->validated());
         $validated = $request->validated();
-        $userId = Auth::user();
-        $userId = $userId->id;
-        $user = User::find($userId);
-        $userProfile = User::where('id', $user->id)->first();
+        $user = $request->user();
+
         $file = $request->file('image');
         if ($file) {
-            $imagePath = $file->store('profile_images', 'public');
-            $userProfile = User_profile::where('user_id', $user->id)->first();
-            if ($userProfile) {
-                $userProfile->image = $imagePath;
-                $userProfile->save();
-            } else {    
-                User_profile::create([
-                    'user_id' => $user->id,
-                    'image' => $imagePath,
-                ]);
+            try {
+                if (Schema::hasTable('user_profiles')) {
+                    $imagePath = $file->store('profile_images', 'public');
+                    $userProfile = User_profile::where('user_id', $user->id)->first();
+                    if ($userProfile) {
+                        $userProfile->image = $imagePath;
+                        $userProfile->save();
+                    } else {
+                        User_profile::create([
+                            'user_id' => $user->id,
+                            'image' => $imagePath,
+                        ]);
+                    }
+                }
+            } catch (\Throwable) {
+                // Ignore profile image persistence if the backing table isn't available.
             }
         }
-        $user->update($validated);
-        // if ($request->user()->isDirty('email')) {
-        //     $request->user()->email_verified_at = null;
-        // }
 
-        // $request->user()->save();
-        return redirect()->route('profile.update')->with('success', 'User updated successfully.');
+        $user->fill($validated);
+        if ($user->isDirty('email')) {
+            $user->email_verified_at = null;
+        }
+        $user->save();
+
+        return Redirect::route('profile.edit')->with('success', 'User updated successfully.');
     }
     public function changePassword(ChangePassword $request)
     {
@@ -313,7 +327,7 @@ class ProfileController extends Controller
         $user = User::find($userId);
         $user->password = bcrypt($validated['password']);
         $user->save();
-        return redirect()->route('profile.update')->with('success', 'User password updated successfully.');
+        return Redirect::route('profile.edit')->with('success', 'User password updated successfully.');
     }
 
     /**

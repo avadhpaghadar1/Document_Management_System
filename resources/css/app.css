@@ -6,3 +6,10 @@
 @import 'dropzone/dist/dropzone.css';
 @import "select2/dist/css/select2.css";
 @import 'daterangepicker.css';
+
+footer.footer {
+	padding-top: 1rem;
+	padding-right: 0.875rem;
+	padding-bottom: 0.5rem;
+	padding-left: 0.875rem;
+}

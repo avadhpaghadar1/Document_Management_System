@@ -12,19 +12,14 @@ class DashboardController extends Controller
     {
         $user = Auth::user();
         $userId = $user->id;
-        $date = date('Y-m-d');
 
-        $total = Document_main::all()->count();
-        $expired = Document_main::where('expiry', '<=', $date)->count();
-        $expiredThirty = Document_main::where('expiry', '<', date('Y-m-d', strtotime($date . ' + 30 days')))
-            ->where('expiry', '>', $date)
-            ->count();
-        $expiredTen = Document_main::where('expiry', '<', date('Y-m-d', strtotime($date . ' + 10 days')))
-            ->where('expiry', '>', $date)
-            ->count();
+        $today = now()->toDateString();
+        $in7 = now()->addDays(7)->toDateString();
+        $in30 = now()->addDays(30)->toDateString();
+        $in90 = now()->addDays(90)->toDateString();
 
-        // Get documents with view permissions by user or group
-        $documents = Document_main::with('documentType')
+        $visibleDocsQuery = Document_main::with('documentType')
+            ->whereNull('deleted_at')
             ->where(function ($query) use ($userId, $user) {
                 $query->whereHas('user_document_permission', function ($query) use ($userId) {
                     $query->where('users.id', $userId)
@@ -34,7 +29,17 @@ class DashboardController extends Controller
                         $query->whereIn('groups.id', $user->groups()->pluck('groups.id')->toArray())
                             ->where('document_group_permissions.view', 1);
                     });
-            })
+            });
+
+        $total = (clone $visibleDocsQuery)->count();
+        $expired = (clone $visibleDocsQuery)->where('expiry', '<=', $today)->count();
+        $expiring7 = (clone $visibleDocsQuery)->whereBetween('expiry', [$today, $in7])->count();
+        $expiring30 = (clone $visibleDocsQuery)->whereBetween('expiry', [$today, $in30])->count();
+        $expiring90 = (clone $visibleDocsQuery)->whereBetween('expiry', [$today, $in90])->count();
+
+        // Get documents with view permissions by user or group
+        $documents = (clone $visibleDocsQuery)
+            ->orderByDesc('id')
             ->take(10)
             ->get();
 
@@ -74,14 +79,19 @@ class DashboardController extends Controller
             })
             ->toArray();
 
-        return view('main/dashboard', [
+        return view('dashboard/index', [
             'documents' => $documents,
             'userPermissions' => $userPermissions,
             'groupPermissions' => $groupPermissions,
             'total' => $total,
             'expired' => $expired,
-            'expiredThirty' => $expiredThirty,
-            'expiredTen' => $expiredTen
+            'expiring7' => $expiring7,
+            'expiring30' => $expiring30,
+            'expiring90' => $expiring90,
+            'today' => $today,
+            'in7' => $in7,
+            'in30' => $in30,
+            'in90' => $in90,
         ]);
     }
 }

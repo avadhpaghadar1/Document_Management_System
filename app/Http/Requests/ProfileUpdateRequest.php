@@ -21,8 +21,8 @@ class ProfileUpdateRequest extends FormRequest
         return [
             'name' => 'required|string|regex:/^[\pL\s\-]+$/u',
             'email' => 'required|email|unique:users,email,' . $userId,
-            'mobile' => 'required|integer',
-            'country' => 'required|not_in:2',
+            'mobile' => 'sometimes|required|integer',
+            'country' => 'sometimes|required|not_in:2',
             'image' => 'nullable|image'
         ];
     }

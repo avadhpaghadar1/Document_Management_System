@@ -25,6 +25,7 @@ class UpdateUserRequest extends FormRequest
         return [
             'name' => 'required|string|regex:/^[\pL\s\-]+$/u',
             'email' => 'required|email|unique:users,email,' . $userId,
+            'role' => 'nullable|in:admin,manager,viewer',
             'mobile' => 'required|integer',
             'country' => 'required|not_in:2'
         ];
